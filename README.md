@@ -23,6 +23,30 @@ src/
 
 ---
 
+## Data Schema Design
+
+## -- UserSchema
+
+invalidPasswordTimestamps: [Date],
+password: String,
+passwordLastUpdated: Date
+
+-- invalidPasswordTimestamps → Stores timestamps of failed login attempts. Used for brute-force detection.
+-- passwordLastUpdated → Helps enforce security policies like password rotation.
+
+## -- BlockedIPsModel
+
+ip: String,
+count: Number,
+blockedAt: { type: Date, default: Date.now },
+expiresAt: Date,
+userEmail: String,
+isBlocked: { type: Boolean, default: false }
+
+-- ip & count → Tracks how many times an IP failed authentication.
+-- expiresAt + TTL index → Automatically removes blocked IPs after expiration — no manual cleanup required.
+-- isBlocked → Flag to instantly block further access without recalculating logic.
+
 ## Features
 
 - User authentication with **JWT**
