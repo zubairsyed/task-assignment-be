@@ -17,7 +17,6 @@ const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
     mongoose_1.default.set("strictQuery", true);
     mongoose_1.default
         .connect("mongodb+srv://mongoProd:Mz3g3Ip4iweFxTMg@cluster0.bqvornw.mongodb.net/")
-        // "mongodb+srv://mongoProd:Mz3g3Ip4iweFxTMg@cluster0.mongodb.net/retryWrites=true&w=majority&appName=Cluster0"
         .then(() => {
         console.log("mongoose connected!");
     })

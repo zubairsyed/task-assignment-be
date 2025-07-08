@@ -27,3 +27,8 @@ export const signUpValidation = joi.object({
     .min(5)
     .required(),
 });
+
+export const signInValidation = joi.object({
+  email: joi.string().email().min(9).max(100).required(),
+  password: joiPassword.string().min(5).max(50).required(),
+});

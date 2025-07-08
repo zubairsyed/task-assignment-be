@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.signUpValidation = void 0;
+exports.signInValidation = exports.signUpValidation = void 0;
 const joi_1 = __importDefault(require("joi"));
 const joi_password_1 = require("joi-password");
 const joiPassword = joi_1.default.extend(joi_password_1.joiPasswordExtendCore);
@@ -26,4 +26,8 @@ exports.signUpValidation = joi_1.default.object({
     })
         .min(5)
         .required(),
+});
+exports.signInValidation = joi_1.default.object({
+    email: joi_1.default.string().email().min(9).max(100).required(),
+    password: joiPassword.string().min(5).max(50).required(),
 });
