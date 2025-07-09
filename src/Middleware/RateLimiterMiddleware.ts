@@ -1,8 +1,13 @@
 import rateLimit from "express-rate-limit";
 import { getIP } from "../Utils/Network.Utils";
 import { BlockedIPsModel } from "../App/controllers/BlockedIps/BlockedIps.model";
-import { BLOCKEDIPS_EXPIRES_AT } from "../libs/Constants/Constants";
+import {
+  BLOCKEDIPS_EXPIRES_AT,
+  GLOBAL_MAXIMUM_REQUESTS,
+} from "../libs/Constants/Constants";
 import { Request, Response, NextFunction } from "express";
+
+let apiCount: number = 0;
 
 // To exit user, if ip is in blocked state
 export const blockedIpStatus = async (
@@ -11,8 +16,9 @@ export const blockedIpStatus = async (
   next: NextFunction
 ): Promise<void> => {
   const ip = getIP(req);
+  apiCount += 1;
   const ipTracker: any = await BlockedIPsModel.findOne({ ip: ip });
-  if (ipTracker?.isBlocked) {
+  if (apiCount >= GLOBAL_MAXIMUM_REQUESTS || ipTracker?.isBlocked) {
     res.status(429).send({
       message: `IP temporarily blocked! gets unblocked at , ${
         ipTracker?.expiresAt ||
@@ -35,11 +41,14 @@ export const globalRateLimiter = (windowMs: any, max: any) => {
       const ip = getIP(req);
       const unblockAt: any = await BlockedIPsModel.findOne({ ip: ip });
       if (!unblockAt) {
-        await BlockedIPsModel.create({
-          ip: ip,
-          expiresAt: new Date(Date.now() + BLOCKEDIPS_EXPIRES_AT * 60 * 1000),
-          isBlocked: true,
-        });
+        await BlockedIPsModel.findOneAndUpdate(
+          { ip: ip },
+          {
+            expiresAt: new Date(Date.now() + BLOCKEDIPS_EXPIRES_AT * 60 * 1000),
+            isBlocked: true,
+          },
+          { new: true, upsert: true }
+        );
       }
       return res.status(429).send({
         message: `IP temporarily blocked due to excessive failed login attempts, ${

@@ -17,11 +17,13 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const Network_Utils_1 = require("../Utils/Network.Utils");
 const BlockedIps_model_1 = require("../App/controllers/BlockedIps/BlockedIps.model");
 const Constants_1 = require("../libs/Constants/Constants");
+let apiCount = 0;
 // To exit user, if ip is in blocked state
 const blockedIpStatus = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const ip = (0, Network_Utils_1.getIP)(req);
+    apiCount += 1;
     const ipTracker = yield BlockedIps_model_1.BlockedIPsModel.findOne({ ip: ip });
-    if (ipTracker === null || ipTracker === void 0 ? void 0 : ipTracker.isBlocked) {
+    if (apiCount >= Constants_1.GLOBAL_MAXIMUM_REQUESTS || (ipTracker === null || ipTracker === void 0 ? void 0 : ipTracker.isBlocked)) {
         res.status(429).send({
             message: `IP temporarily blocked! gets unblocked at , ${(ipTracker === null || ipTracker === void 0 ? void 0 : ipTracker.expiresAt) ||
                 new Date(Date.now() + Constants_1.BLOCKEDIPS_EXPIRES_AT * 60 * 1000)}`,
@@ -42,11 +44,10 @@ const globalRateLimiter = (windowMs, max) => {
             const ip = (0, Network_Utils_1.getIP)(req);
             const unblockAt = yield BlockedIps_model_1.BlockedIPsModel.findOne({ ip: ip });
             if (!unblockAt) {
-                yield BlockedIps_model_1.BlockedIPsModel.create({
-                    ip: ip,
+                yield BlockedIps_model_1.BlockedIPsModel.findOneAndUpdate({ ip: ip }, {
                     expiresAt: new Date(Date.now() + Constants_1.BLOCKEDIPS_EXPIRES_AT * 60 * 1000),
                     isBlocked: true,
-                });
+                }, { new: true, upsert: true });
             }
             return res.status(429).send({
                 message: `IP temporarily blocked due to excessive failed login attempts, ${(unblockAt === null || unblockAt === void 0 ? void 0 : unblockAt.expiresAt) ||
